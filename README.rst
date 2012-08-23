@@ -98,3 +98,7 @@ Settings
     
 ``LESS_MTIME_DELAY``
     Cache timeout for reading the modification time of external stylesheets (in seconds). Default: 10 seconds.
+	
+``LESS_STATIC_ROOT``
+	Directory where we should look for the less files. defaults to STATIC_ROOT or MEDIA_ROOT
+	

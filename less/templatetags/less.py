@@ -1,7 +1,7 @@
 from tempfile import NamedTemporaryFile
 from ..cache import get_cache_key, get_hexdigest, get_hashed_mtime
 from ..settings import LESS_EXECUTABLE, LESS_USE_CACHE,\
-    LESS_CACHE_TIMEOUT, LESS_OUTPUT_DIR
+    LESS_CACHE_TIMEOUT, LESS_OUTPUT_DIR, LESS_OUTPUT_URI
 from ..utils import URLConverter
 from django.conf import settings
 from django.core.cache import cache
@@ -66,9 +66,12 @@ def do_inlineless(parser, token):
 def less(path):
 
     try:
-        STATIC_ROOT = settings.STATIC_ROOT
-    except AttributeError:
-        STATIC_ROOT = settings.MEDIA_ROOT
+        STATIC_ROOT = settings.LESS_STATIC_ROOT
+    except:
+        try:
+            STATIC_ROOT = settings.STATIC_ROOT
+        except AttributeError:
+            STATIC_ROOT = settings.MEDIA_ROOT
 
     try:
         STATIC_URL = settings.STATIC_URL
@@ -80,18 +83,29 @@ def less(path):
         filesystem_encoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
         encoded_full_path = full_path.encode(filesystem_encoding)
 
+
     filename = os.path.split(path)[-1]
 
-    output_directory = os.path.join(STATIC_ROOT, LESS_OUTPUT_DIR, os.path.dirname(path))
+    if LESS_OUTPUT_DIR.startswith('/'):
+        output_directory = os.path.join(LESS_OUTPUT_DIR, os.path.dirname(path))
+    else:
+        output_directory = os.path.join(STATIC_ROOT, LESS_OUTPUT_DIR, os.path.dirname(path))
+
+
 
     hashed_mtime = get_hashed_mtime(full_path)
 
     if filename.endswith(".less"):
         base_filename = filename[:-5]
+        base_path = path[:-5]
     else:
         base_filename = filename
+        base_path = path
 
-    output_path = os.path.join(output_directory, "%s-%s.css" % (base_filename, hashed_mtime))
+    filename = "%s-%s.css" % (base_filename, hashed_mtime)
+    output_path = os.path.join(output_directory, filename)
+
+    logging.info('%s %s %s %s', path,encoded_full_path,output_path, STATIC_ROOT)
 
     if not os.path.exists(output_path):
         command = "%s %s" % (LESS_EXECUTABLE, encoded_full_path)
@@ -114,4 +128,4 @@ def less(path):
             logger.error(errors)
             return path
 
-    return output_path[len(STATIC_ROOT):].replace(os.sep, '/').lstrip("/")
+    return os.path.join(LESS_OUTPUT_URI,filename) #output_path[len(STATIC_ROOT):].replace(os.sep, '/').lstrip("/")
