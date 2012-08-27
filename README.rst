@@ -102,3 +102,24 @@ Settings
 ``LESS_STATIC_ROOT``
 	Directory where we should look for the less files. defaults to STATIC_ROOT or MEDIA_ROOT
 	
+``LESS_OUTPUT_URI``
+	URI to use with the converted files
+
+``LESS_FORCE_REGENERATE``
+	Force the regeneration of the css with each request, useful for the designers if they use imports 
+
+``LESS_USE_URL_CONVERTER``
+	Set it to False if you do not want to have your urls
+	
+	
+Another usage case
+******************
+
+this is how I use this when using Mustache instead of standard Django templates. Just add this somewhere in the in your view, so that it ends up in your view's context
+
+::
+
+    from less.templatetags.less import less
+    context['less_generated_css'] = less('custom.less')
+
+

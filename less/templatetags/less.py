@@ -1,7 +1,8 @@
 from tempfile import NamedTemporaryFile
 from ..cache import get_cache_key, get_hexdigest, get_hashed_mtime
 from ..settings import LESS_EXECUTABLE, LESS_USE_CACHE,\
-    LESS_CACHE_TIMEOUT, LESS_OUTPUT_DIR, LESS_OUTPUT_URI
+    LESS_CACHE_TIMEOUT, LESS_OUTPUT_DIR, LESS_OUTPUT_URI,\
+    LESS_FORCE_REGENERATE, LESS_USE_URL_CONVERTER
 from ..utils import URLConverter
 from django.conf import settings
 from django.core.cache import cache
@@ -64,7 +65,6 @@ def do_inlineless(parser, token):
 
 @register.simple_tag
 def less(path):
-
     try:
         STATIC_ROOT = settings.LESS_STATIC_ROOT
     except:
@@ -105,9 +105,7 @@ def less(path):
     filename = "%s-%s.css" % (base_filename, hashed_mtime)
     output_path = os.path.join(output_directory, filename)
 
-    logging.info('%s %s %s %s', path,encoded_full_path,output_path, STATIC_ROOT)
-
-    if not os.path.exists(output_path):
+    if LESS_FORCE_REGENERATE or not os.path.exists(output_path):
         command = "%s %s" % (LESS_EXECUTABLE, encoded_full_path)
         args = shlex.split(command)
         p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -116,7 +114,10 @@ def less(path):
             if not os.path.exists(output_directory):
                 os.makedirs(output_directory)
             compiled_file = open(output_path, "w+")
-            compiled_file.write(URLConverter(out, os.path.join(STATIC_URL, path)).convert())
+            if LESS_USE_URL_CONVERTER :
+                compiled_file.write(URLConverter(out, os.path.join(STATIC_URL, path)).convert())
+            else:
+                compiled_file.write(out)
             compiled_file.close()
 
             # Remove old files

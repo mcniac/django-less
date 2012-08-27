@@ -21,6 +21,7 @@ class URLConverter(object):
         return "url('%s')" % full_url
 
     def convert(self):
-        return URL_PATTERN.sub(self.convert_url, self.content)
+        return self.content
+        # return URL_PATTERN.sub(self.convert_url, self.content)
 
 
